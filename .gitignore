@@ -1,0 +1,16 @@
+fox-pkg/pkg/
+fox-pkg/src/
+
+fox-pkg/*.pkg.tar.*
+fox-pkg/*.tar.gz
+fox-pkg/*.tar.xz
+fox-pkg/*.tar.zst
+fox-pkg/*.sig
+
+*.log
+*.tmp
+*.swp
+*~
+.vscode/
+.idea/
+.DS_Store

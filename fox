@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# fox — TUI unificado de backup/restore de configs compartilhadas
+# entre usuários do sistema, com seleção de diretórios via yazi e gerência
+# de chaves GPG por chave/usuário-destino.
+#
+# Uso:
+#   fox             abre o menu principal
+#   fox --dry       roda em modo dry-run (nenhuma ação é executada de fato)
+#   fox --version   mostra a versão
+#   fox --help      mostra teclas e explica as funções do TUI
+set -euo pipefail
+
+FOX_LIB_DIR="${FOX_LIB_DIR:-/usr/lib/fox}"
+if [[ ! -d "$FOX_LIB_DIR" ]]; then
+  # Modo desenvolvimento: rodando direto da pasta do projeto sem instalar.
+  FOX_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+fi
+
+# shellcheck source=lib/core.bash
+source "${FOX_LIB_DIR}/core.bash"
+# shellcheck source=lib/ui.bash
+source "${FOX_LIB_DIR}/ui.bash"
+# shellcheck source=lib/gpgkeys.bash
+source "${FOX_LIB_DIR}/gpgkeys.bash"
+# shellcheck source=lib/backup.bash
+source "${FOX_LIB_DIR}/backup.bash"
+# shellcheck source=lib/restore.bash
+source "${FOX_LIB_DIR}/restore.bash"
+
+fox::print_help() {
+  cat <<EOF
+fox ${FOX_VERSION}
+
+ATENÇÃO: pra interagir com /home/ de outros usuários além do seu próprio
+(backup de outro usuário, restore pra outro usuário, exportar chave do
+keyring de outro usuário) é necessário rodar o fox como root/sudo.
+Sem isso, operações que exigem ler/gravar fora do seu próprio \$HOME vão
+falhar por permissão.
+
+Uso: fox [--help|--version|--dry]
+
+Flags:
+  --help      mostra esta ajuda e sai
+  --version   mostra a versão e sai
+  --dry       modo dry-run — as escritas de efeito real (cp/chown pro
+              \$HOME de usuários destino, e o arquivo .gpg final gerado em
+              disco) são só impressas, não executadas. Descriptografia e
+              extração de arquivo pra pasta temporária SEMPRE rodam de
+              verdade (são inofensivas — tudo dentro de mktemp, apagado no
+              fim), pra você conseguir validar/testar o fluxo de verdade.
+
+Menu principal:
+  Backup      escolhe um usuário de origem, permite adicionar diretórios
+              via yazi (seleção em lote, visual mode + yank ou Space
+              item a item), remover itens da lista persistida, gerenciar
+              quais chaves .asc entram no pacote e pra quais usuários, e
+              gerar o fox-backup-<data>.tar.gz.gpg (GPG simétrico
+              ou assimétrico).
+  Restaurar   descriptografa um backup existente e permite escolher, por
+              arquivo, pra quais usuários restaurar.
+  Gerenciar chaves GPG
+              exporta uma chave secreta nova direto do keyring de um
+              /home/ escolhido (gpg --export-secret-keys) pra dentro do
+              projeto, ou seleciona entre as .asc já presentes quais
+              entram no próximo backup e pra quais usuários cada uma vai.
+
+Teclas dentro dos menus (customizáveis em ~/.config/fox/fox.conf):
+  ${FOX_KEY_CONFIRM:-enter}    confirmar/selecionar
+  ${FOX_KEY_BACK:-esc}      voltar / cancelar
+  ${FOX_KEY_TOGGLE:-tab}      marcar/desmarcar item (checklists)
+
+Estado persistido:
+  ~/.config/fox/backup-list    lista de itens marcados pra backup
+  ~/.config/fox/keys/*.asc     chaves disponíveis pra exportação
+  ~/.config/fox/key-targets    mapeamento chave -> usuários destino
+  ~/.config/fox/fox.conf  customização de cores, binds,
+                                        destinatário GPG e diretório padrão
+                                        de backup (FOX_BACKUP_DIR)
+
+Doc completa de customização visual/binds: ver docs/CUSTOMIZATION.md
+EOF
+}
+
+main() {
+  fox::init_dirs
+  trap fox::cleanup_tempdirs EXIT
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --help) fox::print_help; exit 0 ;;
+      --version) printf 'fox %s\n' "$FOX_VERSION"; exit 0 ;;
+      --dry) DRY_RUN=1; fox::log "Modo dry-run ativo — nenhuma ação real será executada." ;;
+      *) fox::die "Flag desconhecida: $1 (use --help)" ;;
+    esac
+    shift
+  done
+
+  if ! command -v fzf &>/dev/null; then
+    fox::die "fzf não encontrado. Instale antes de usar o fox."
+  fi
+
+  while true; do
+    local choice
+    choice="$(fox::ui::menu "fox ${FOX_VERSION}$([[ $DRY_RUN -eq 1 ]] && echo ' [DRY-RUN]')" \
+      "Backup" "Restaurar" "Gerenciar chaves GPG" "Sair")"
+
+    case "$choice" in
+      "Backup")    fox::backup::menu ;;
+      "Restaurar") fox::restore::menu ;;
+      "Gerenciar chaves GPG") fox::gpgkeys::manage_menu ;;
+      "Sair"|"")   fox::log "Até mais."; exit 0 ;;
+    esac
+  done
+}
+
+main "$@"

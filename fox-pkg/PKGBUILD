@@ -1,0 +1,48 @@
+# Maintainer: Henrique <HG_Bits@protonmail.com>
+pkgname=foxhide
+# Nota: o binário instalado continua se chamando 'fox' — só o nome
+# do pacote é foxhide, porque já existe um pacote oficial "fox" no
+# repositório extra do Arch (FOX GUI Toolkit, sem relação com este projeto).
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="TUI unificado de backup/restore de configs com GPG e yazi"
+arch=('any')
+url="https://github.com/HGBits/Fox"
+license=('GPL3')
+depends=(
+    'bash'
+    'fzf'
+    'gnupg'
+    'tar'
+    'gzip'
+)
+optdepends=(
+    'yazi: seleção visual de diretórios (necessária para Backup via yazi)'
+)
+# Fonte local — usa o .tar.gz que já existe
+source=("fox-$pkgver.tar.gz::file://$startdir/fox.tar.gz")
+# SHA256 do fox.tar.gz (já existe na pasta, usa o valor correto)
+# Rode: sha256sum fox.tar.gz → cola o hash abaixo
+sha256sums=('ceeb44ace3cf9b6bb3668ff908e695e4e4a0e419f032dfbd9a299a98bdfbc5d6')
+package() {
+    cd "$srcdir/fox"  # o tar.gz tem uma pasta fox/ por dentro
+    # Binário principal
+    install -Dm755 fox "$pkgdir/usr/bin/fox"
+    # Bibliotecas → /usr/lib/fox/ (padrão Arch)
+    mkdir -p "$pkgdir/usr/lib/fox/"
+    for lib in lib/*.bash; do
+        install -Dm644 "$lib" "$pkgdir/usr/lib/fox/$(basename "$lib")"
+    done
+    # Config padrão
+    mkdir -p "$pkgdir/etc/fox/"
+    install -Dm644 config/fox.conf.default \
+        "$pkgdir/etc/fox/fox.conf"
+    # Documentação
+    install -Dm644 README.md \
+        "$pkgdir/usr/share/doc/fox/README.md"
+    install -Dm644 docs/CUSTOMIZATION.md \
+        "$pkgdir/usr/share/doc/fox/CUSTOMIZATION.md"
+    # Licença
+    install -Dm644 LICENSE \
+        "$pkgdir/usr/share/licenses/fox/LICENSE"
+}

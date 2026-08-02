@@ -1,0 +1,28 @@
+# fox.conf — customização de visual e keybinds do fox.
+# Copiado automaticamente pra ~/.config/fox/fox.conf na
+# primeira execução, se ainda não existir. Edite a cópia do seu $HOME,
+# não este arquivo (que é só o template do sistema).
+#
+# Ver docs/CUSTOMIZATION.md pra explicação completa de cada variável.
+
+# --- Keybinds (sintaxe de --bind do fzf: https://github.com/junegunn/fzf) ---
+# FOX_KEY_ADD="ctrl-a"
+# FOX_KEY_DEL="ctrl-d"
+# FOX_KEY_CONFIRM="enter"
+# FOX_KEY_BACK="esc"
+# FOX_KEY_TOGGLE="tab"
+
+# --- Cores (string --color do fzf, ex: "fg:#d0d0d0,bg:#121212,hl:#5f87af") ---
+# FOX_FZF_COLOR=""
+
+# --- Criptografia do backup ---
+# Se definido, o backup usa GPG assimétrico pra esta chave direto, sem
+# perguntar nada na hora de gerar. Aceita ID, e-mail ou fingerprint.
+# Deixe vazio/comentado pra escolher (simétrica ou assimétrica) toda vez
+# que gerar um backup.
+# FOX_GPG_RECIPIENT=""
+
+# --- Diretório padrão pra salvar os backups gerados ---
+# Default: ${XDG_DATA_HOME:-$HOME/.local/share}/fox/backups
+# Sempre editável na hora, quando o script perguntar o destino.
+# FOX_BACKUP_DIR="$HOME/.local/share/fox/backups"
