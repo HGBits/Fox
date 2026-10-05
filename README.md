@@ -98,3 +98,6 @@ fox --help      mostra teclas e explica as funções do TUI
 
 Customização de cores/keybinds/criptografia: veja
 [`docs/CUSTOMIZATION.md`](./docs/CUSTOMIZATION.md).
+
+Política de uso de IA: veja
+[`docs/Diretriz-de-Uso-de-IA.md`](./docs/Diretriz-de-Uso-de-IA.md).
